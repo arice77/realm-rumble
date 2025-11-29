@@ -17,7 +17,7 @@ export const MoveSelector = ({ player }: MoveSelectorProps) => {
       type: 'attack' as MoveType,
       icon: Sword,
       label: 'ATTACK',
-      cost: 20,
+      cost: 25,
       description: '25 damage',
       color: 'from-destructive to-destructive/80',
       disabled: false,

@@ -14,6 +14,8 @@ export interface Player {
   currentMove: MoveType;
   moveHistory: { turn: number; move: MoveType; damage?: number }[];
   isReady: boolean;
+  consecutiveAttacks: number;
+  hasAttackBuff: boolean;
 }
 
 export interface BattleLogEntry {
@@ -54,6 +56,8 @@ const createPlayer = (id: string, name: string): Player => ({
   currentMove: null,
   moveHistory: [],
   isReady: false,
+  consecutiveAttacks: 0,
+  hasAttackBuff: false,
 });
 
 const calculateDamage = (
@@ -61,23 +65,42 @@ const calculateDamage = (
   defender: Player,
   attackerMove: MoveType,
   defenderMove: MoveType
-): { damage: number; healing: number } => {
+): { damage: number; healing: number; counterDamage: number } => {
   let damage = 0;
   let healing = 0;
+  let counterDamage = 0;
 
   if (attackerMove === 'attack') {
-    const baseDamage = attacker.energy >= 20 ? 25 : 10;
-    damage = baseDamage * attacker.powerUpMultiplier;
+    const baseDamage = attacker.energy >= 25 ? 25 : 10;
+    let finalDamage = baseDamage * attacker.powerUpMultiplier;
     
-    if (defenderMove === 'defend') {
-      const defenseStrength = defender.energy >= 10 ? 0.3 : 0.7;
-      damage = damage * defenseStrength;
+    // Apply attack buff from previous PowerUp vs Attack interaction
+    if (attacker.hasAttackBuff) {
+      finalDamage *= 1.5;
     }
+    
+    // Attack fatigue: 2+ consecutive attacks reduces damage by 30%
+    if (attacker.consecutiveAttacks >= 1) {
+      finalDamage *= 0.7;
+    }
+    
+    // Both Attack: 1.3x damage
+    if (defenderMove === 'attack') {
+      finalDamage *= 1.3;
+    }
+    // Defend vs Attack: Reduced damage + counterattack
+    else if (defenderMove === 'defend') {
+      const defenseStrength = defender.energy >= 10 ? 0.3 : 0.7;
+      finalDamage *= defenseStrength;
+      counterDamage = 5; // Defender counterattacks for 5 damage
+    }
+    
+    damage = finalDamage;
   } else if (attackerMove === 'powerup') {
     healing = attacker.energy >= 15 ? 10 : 5;
   }
 
-  return { damage: Math.round(damage), healing };
+  return { damage: Math.round(damage), healing, counterDamage };
 };
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -141,16 +164,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const p1Result = calculateDamage(player1, player2, player1.currentMove, player2.currentMove);
     const p2Result = calculateDamage(player2, player1, player2.currentMove, player1.currentMove);
 
-    // Update HP
-    let newP1Hp = Math.max(0, player1.hp - p2Result.damage + p1Result.healing);
-    let newP2Hp = Math.max(0, player2.hp - p1Result.damage + p2Result.healing);
+    // Update HP (including counterattack damage)
+    let newP1Hp = Math.max(0, player1.hp - p2Result.damage - p2Result.counterDamage + p1Result.healing);
+    let newP2Hp = Math.max(0, player2.hp - p1Result.damage - p1Result.counterDamage + p2Result.healing);
 
-    // Update energy
-    const p1EnergyCost = player1.currentMove === 'attack' ? 20 : player1.currentMove === 'defend' ? 10 : 15;
-    const p2EnergyCost = player2.currentMove === 'attack' ? 20 : player2.currentMove === 'defend' ? 10 : 15;
+    // Update energy with new system
+    // Base regen: 20 energy/turn
+    // Attack costs 25 (net -5)
+    // Defend gives +5 bonus (net +25 total)
+    // PowerUp gives +10 bonus (net +30 total)
+    const baseRegen = 20;
+    const p1EnergyCost = player1.currentMove === 'attack' ? 25 : player1.currentMove === 'defend' ? 10 : 15;
+    const p2EnergyCost = player2.currentMove === 'attack' ? 25 : player2.currentMove === 'defend' ? 10 : 15;
     
-    let newP1Energy = Math.min(100, Math.max(0, player1.energy - p1EnergyCost + 15));
-    let newP2Energy = Math.min(100, Math.max(0, player2.energy - p2EnergyCost + 15));
+    const p1EnergyBonus = player1.currentMove === 'defend' ? 5 : player1.currentMove === 'powerup' ? 10 : 0;
+    const p2EnergyBonus = player2.currentMove === 'defend' ? 5 : player2.currentMove === 'powerup' ? 10 : 0;
+    
+    let newP1Energy = Math.min(100, Math.max(0, player1.energy - p1EnergyCost + baseRegen + p1EnergyBonus));
+    let newP2Energy = Math.min(100, Math.max(0, player2.energy - p2EnergyCost + baseRegen + p2EnergyBonus));
 
     // Update power-up multiplier
     let newP1Multiplier = player1.powerUpMultiplier;
@@ -168,13 +199,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
       newP2Multiplier = Math.min(2.5, player2.powerUpMultiplier + 0.5);
     }
 
+    // Update consecutive attacks counter
+    const newP1ConsecutiveAttacks = player1.currentMove === 'attack' ? player1.consecutiveAttacks + 1 : 0;
+    const newP2ConsecutiveAttacks = player2.currentMove === 'attack' ? player2.consecutiveAttacks + 1 : 0;
+
+    // Update attack buff (PowerUp vs Attack gives next attack buff)
+    const newP1AttackBuff = player1.currentMove === 'powerup' && player2.currentMove === 'attack';
+    const newP2AttackBuff = player2.currentMove === 'powerup' && player1.currentMove === 'attack';
+
     // Add to battle log
     const logEntry: BattleLogEntry = {
       turn: currentTurn,
       player1Move: player1.currentMove,
       player2Move: player2.currentMove,
-      player1Damage: p2Result.damage,
-      player2Damage: p1Result.damage,
+      player1Damage: p2Result.damage + p2Result.counterDamage,
+      player2Damage: p1Result.damage + p1Result.counterDamage,
       player1Healing: p1Result.healing,
       player2Healing: p2Result.healing,
     };
@@ -183,7 +222,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const p1History = [...player1.moveHistory, { turn: currentTurn, move: player1.currentMove, damage: p1Result.damage }];
     const p2History = [...player2.moveHistory, { turn: currentTurn, move: player2.currentMove, damage: p2Result.damage }];
 
-    // Check for winner
+    // Check for winner (HP ≤ 0 OR turn limit reached)
     let winner = null;
     let gameState: GameState = 'playing';
     
@@ -195,6 +234,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
       gameState = 'finished';
     } else if (newP2Hp <= 0) {
       winner = player1.name;
+      gameState = 'finished';
+    } else if (currentTurn >= 15) {
+      // Turn limit reached: highest HP wins
+      if (newP1Hp > newP2Hp) {
+        winner = player1.name;
+      } else if (newP2Hp > newP1Hp) {
+        winner = player2.name;
+      } else {
+        winner = 'Draw';
+      }
       gameState = 'finished';
     }
 
@@ -208,6 +257,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           currentMove: null,
           isReady: false,
           moveHistory: p1History,
+          consecutiveAttacks: newP1ConsecutiveAttacks,
+          hasAttackBuff: newP1AttackBuff,
         },
         player2: {
           ...player2,
@@ -217,6 +268,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           currentMove: null,
           isReady: false,
           moveHistory: p2History,
+          consecutiveAttacks: newP2ConsecutiveAttacks,
+          hasAttackBuff: newP2AttackBuff,
         },
         battleLog: [...state.battleLog, logEntry],
         currentTurn: currentTurn + 1,

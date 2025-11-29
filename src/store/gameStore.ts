@@ -16,6 +16,7 @@ export interface Player {
   isReady: boolean;
   consecutiveAttacks: number;
   hasAttackBuff: boolean;
+  walletAddress?: `0x${string}`;
 }
 
 export interface BattleLogEntry {
@@ -26,6 +27,7 @@ export interface BattleLogEntry {
   player2Damage: number;
   player1Healing: number;
   player2Healing: number;
+  txHash?: string;
 }
 
 interface GameStore {
@@ -37,15 +39,25 @@ interface GameStore {
   battleLog: BattleLogEntry[];
   winner: string | null;
   
+  // Web3 state
+  isWeb3Mode: boolean;
+  matchId: `0x${string}` | null;
+  pendingTxHash: string | null;
+  
   // Actions
-  startGame: (player1Name: string, player2Name: string) => void;
+  startGame: (player1Name: string, player2Name: string, player1Address?: `0x${string}`, player2Address?: `0x${string}`) => void;
   selectMove: (playerId: string, move: MoveType) => void;
   resolveTurn: () => void;
   resetGame: () => void;
   setTimeRemaining: (time: number) => void;
+  
+  // Web3 actions
+  setWeb3Mode: (enabled: boolean, matchId?: `0x${string}`) => void;
+  setPendingTx: (txHash: string | null) => void;
+  addTxToLog: (turn: number, txHash: string) => void;
 }
 
-const createPlayer = (id: string, name: string): Player => ({
+const createPlayer = (id: string, name: string, walletAddress?: `0x${string}`): Player => ({
   id,
   name,
   hp: 100,
@@ -58,6 +70,7 @@ const createPlayer = (id: string, name: string): Player => ({
   isReady: false,
   consecutiveAttacks: 0,
   hasAttackBuff: false,
+  walletAddress,
 });
 
 const calculateDamage = (
@@ -111,14 +124,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
   player2: createPlayer('player2', 'Player 2'),
   battleLog: [],
   winner: null,
+  
+  // Web3 state
+  isWeb3Mode: false,
+  matchId: null,
+  pendingTxHash: null,
 
-  startGame: (player1Name: string, player2Name: string) => {
+  startGame: (player1Name: string, player2Name: string, player1Address?: `0x${string}`, player2Address?: `0x${string}`) => {
     set({
       gameState: 'playing',
       currentTurn: 1,
       timeRemaining: 30,
-      player1: createPlayer('player1', player1Name),
-      player2: createPlayer('player2', player2Name),
+      player1: createPlayer('player1', player1Name, player1Address),
+      player2: createPlayer('player2', player2Name, player2Address),
       battleLog: [],
       winner: null,
     });
@@ -289,10 +307,30 @@ export const useGameStore = create<GameStore>((set, get) => ({
       player2: createPlayer('player2', 'Player 2'),
       battleLog: [],
       winner: null,
+      isWeb3Mode: false,
+      matchId: null,
+      pendingTxHash: null,
     });
   },
 
   setTimeRemaining: (time: number) => {
     set({ timeRemaining: time });
+  },
+  
+  // Web3 actions
+  setWeb3Mode: (enabled: boolean, matchId?: `0x${string}`) => {
+    set({ isWeb3Mode: enabled, matchId: matchId || null });
+  },
+  
+  setPendingTx: (txHash: string | null) => {
+    set({ pendingTxHash: txHash });
+  },
+  
+  addTxToLog: (turn: number, txHash: string) => {
+    const { battleLog } = get();
+    const updatedLog = battleLog.map(entry => 
+      entry.turn === turn ? { ...entry, txHash } : entry
+    );
+    set({ battleLog: updatedLog });
   },
 }));

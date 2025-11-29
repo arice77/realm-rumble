@@ -13,6 +13,26 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // Polyfill buffer for browser
+      buffer: 'buffer/',
+    },
+  },
+  define: {
+    // Make Buffer available globally
+    'global': 'globalThis',
+    'Buffer': ['buffer', 'Buffer'],
+  },
+  optimizeDeps: {
+    include: ['buffer'],
+    esbuildOptions: {
+      define: {
+        global: 'globalThis',
+      },
+    },
+  },
+  build: {
+    commonjsOptions: {
+      transformMixedEsModules: true,
     },
   },
 }));

@@ -9,13 +9,19 @@ export const HPBar = ({ hp, maxHp }: HPBarProps) => {
   const percentage = (hp / maxHp) * 100;
   
   const getColor = () => {
-    if (percentage > 60) return 'bg-green-500';
-    if (percentage > 30) return 'bg-yellow-500';
-    return 'bg-destructive';
+    if (percentage > 60) return 'from-green-500 to-emerald-500';
+    if (percentage > 30) return 'from-yellow-500 to-orange-500';
+    return 'from-red-500 to-rose-500';
+  };
+
+  const getShadow = () => {
+    if (percentage > 60) return 'shadow-green-500/50';
+    if (percentage > 30) return 'shadow-yellow-500/50';
+    return 'shadow-red-500/50';
   };
 
   return (
-    <div className="relative h-6 bg-muted/30 rounded-full overflow-hidden border border-border">
+    <div className="relative h-5 bg-slate-800/80 rounded-full overflow-hidden border border-slate-700/50">
       <motion.div
         initial={{ width: `${percentage}%` }}
         animate={{ width: `${percentage}%` }}
@@ -24,11 +30,11 @@ export const HPBar = ({ hp, maxHp }: HPBarProps) => {
           stiffness: 100,
           damping: 15,
         }}
-        className={`h-full ${getColor()} relative`}
+        className={`h-full bg-gradient-to-r ${getColor()} relative shadow-lg ${getShadow()}`}
       >
         <motion.div
           animate={{
-            opacity: [0.5, 1, 0.5],
+            opacity: [0.3, 0.6, 0.3],
           }}
           transition={{
             duration: 1.5,
@@ -38,7 +44,7 @@ export const HPBar = ({ hp, maxHp }: HPBarProps) => {
         />
       </motion.div>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-xs font-bold text-foreground drop-shadow-md">
+        <span className="text-xs font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
           {percentage.toFixed(0)}%
         </span>
       </div>

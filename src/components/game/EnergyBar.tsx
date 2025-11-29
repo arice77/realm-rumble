@@ -9,7 +9,7 @@ export const EnergyBar = ({ energy, maxEnergy }: EnergyBarProps) => {
   const percentage = (energy / maxEnergy) * 100;
 
   return (
-    <div className="relative h-4 bg-muted/30 rounded-full overflow-hidden border border-border">
+    <div className="relative h-3 bg-slate-800/80 rounded-full overflow-hidden border border-slate-700/50">
       <motion.div
         initial={{ width: `${percentage}%` }}
         animate={{ width: `${percentage}%` }}
@@ -18,7 +18,7 @@ export const EnergyBar = ({ energy, maxEnergy }: EnergyBarProps) => {
           stiffness: 100,
           damping: 15,
         }}
-        className="h-full bg-gradient-to-r from-chart-1 to-primary relative"
+        className="h-full bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 relative shadow-lg shadow-yellow-500/30"
       >
         <motion.div
           animate={{
@@ -29,7 +29,7 @@ export const EnergyBar = ({ energy, maxEnergy }: EnergyBarProps) => {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute inset-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+          className="absolute inset-0 w-1/3 bg-gradient-to-r from-transparent via-white/50 to-transparent"
         />
       </motion.div>
     </div>

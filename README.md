@@ -134,14 +134,7 @@ const allMoves = await sdk.streams.getAllPublisherDataForSchema(
 ## 🎥 Demo (3–5 Minutes)
 
 👉 **Demo Video:**
-**[YOUR VIDEO URL HERE]**
-
----
-
-## 🌐 Deployment
-
-👉 **Live dApp:**
-**[YOUR DEPLOYMENT URL HERE]**
+**https://youtu.be/6yG-rfXR-No**
 
 ---
 

@@ -145,16 +145,6 @@ const allMoves = await sdk.streams.getAllPublisherDataForSchema(
 
 ---
 
-## 🏆 Hackathon Submission Checklist
-
-* 🟩 Public GitHub repository
-* 🟩 Fully functional dApp on Somnia Testnet
-* 🟩 SDS schemas + data streaming implemented
-* 🟩 Demo video included
-* 🟩 Clean README explaining integration
-
----
-
 ## 📚 Resources
 
 * Somnia Docs — [https://docs.somnia.network](https://docs.somnia.network)

@@ -1,73 +1,165 @@
-# Welcome to your Lovable project
+# **Realm Rush — Web3 PvP Strategy Game**
 
-## Project info
+**Built for the Somnia Data Streams Mini Hackathon (Nov 4–15, 2025)**
+**A real-time, on-chain, turn-based PvP battle game powered by Somnia Data Streams.**
 
-**URL**: https://lovable.dev/projects/ad921e3e-3a83-40f2-a221-defe6095d188
+---
 
-## How can I edit this code?
+## ⭐ Overview
 
-There are several ways of editing your application.
+**Realm Rush** is a turn-based PvP strategy game where two players battle using three move types—**Attack**, **Defend**, and **Power-Up**.
+Every move, game state, and match result is stored **on-chain** using **Somnia Data Streams (SDS)**, enabling true real-time gameplay across browsers and wallets.
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/ad921e3e-3a83-40f2-a221-defe6095d188) and start prompting.
+## 🎮 Game Mechanics
 
-Changes made via Lovable will be committed automatically to this repo.
+Each player manages:
 
-**Use your preferred IDE**
+* **100 HP**
+* **Energy (0–5)**
+* **Power Multiplier**
+* **Up to 15 Turns**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Available actions:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+* **Attack** — Deal direct damage
+* **Defend** — Block & counterattack
+* **Power-Up** — Boost multiplier & heal
 
-Follow these steps:
+The goal: **Reduce your opponent’s HP to 0**.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 🚀 Powered by Somnia Data Streams
 
-# Step 3: Install the necessary dependencies.
-npm i
+Realm Rush uses SDS as the **single source of truth** for live PvP gameplay.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### 🔑 SDS Features Used
+
+* **On-chain match creation**
+* **On-chain move submission**
+* **Real-time streaming of opponent actions**
+* **Persistent on-chain match history**
+* **Schema-based structured storage**
+
+### 📦 Data Schemas
+
+1. **Match State Schema** – HP, Energy, Turn, Status
+2. **Move Schema** – Move type, turn number, timestamp
+3. **Match Result Schema** – Winner, loser, total turns
+
+---
+
+## 🛠 Tech Stack
+
+* **React + TypeScript + Vite**
+* **Somnia Data Streams SDK (`@somnia-chain/streams`)**
+* **Wagmi + Viem**
+* **Tailwind CSS + shadcn-ui**
+* **Zustand**
+* **Somnia Testnet**
+
+---
+
+## 📦 Installation
+
+```bash
+git clone <your-repository-url>
+cd realm-rumble
+
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🎯 How to Play
 
-**Use GitHub Codespaces**
+### **Local Mode**
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+* Test game mechanics instantly
+* No wallet required
 
-## What technologies are used for this project?
+### **PvP Mode (Web3)**
 
-This project is built with:
+1. Connect your Web3 wallet
+2. Switch to **Somnia Testnet**
+3. Get STT from the faucet
+4. **Create** or **Join** a match
+5. Submit moves turn-by-turn
+6. Wait for on-chain opponent actions via SDS
+7. Win by reducing opponent HP to 0
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## 🔧 SDS Integration (Code Highlights)
 
-Simply open [Lovable](https://lovable.dev/projects/ad921e3e-3a83-40f2-a221-defe6095d188) and click on Share -> Publish.
+### Register Schemas
 
-## Can I connect a custom domain to my Lovable project?
+```ts
+await sdk.streams.registerDataSchemas([
+  { schemaName: "realmRushMatch", schema: MATCH_STATE_SCHEMA },
+  { schemaName: "realmRushMove", schema: MOVE_SCHEMA },
+  { schemaName: "realmRushResult", schema: MATCH_RESULT_SCHEMA },
+]);
+```
 
-Yes, you can!
+### Publish Data
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+```ts
+await sdk.streams.set([
+  { id: matchId, schemaId: matchStateSchemaId, data: encodedMatchState },
+]);
+```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+### Stream Updates
+
+```ts
+const opponentMoves = await getOnChainMoves(matchId, opponentAddress);
+const move = opponentMoves.find(m => m.turnNumber === currentTurn);
+```
+
+### Query History
+
+```ts
+const allMoves = await sdk.streams.getAllPublisherDataForSchema(
+  moveSchemaId,
+  publisher
+);
+```
+
+---
+
+## 🎥 Demo (3–5 Minutes)
+
+👉 **Demo Video:**
+**[YOUR VIDEO URL HERE]**
+
+---
+
+## 🌐 Deployment
+
+👉 **Live dApp:**
+**[YOUR DEPLOYMENT URL HERE]**
+
+---
+
+## 🏆 Hackathon Submission Checklist
+
+* 🟩 Public GitHub repository
+* 🟩 Fully functional dApp on Somnia Testnet
+* 🟩 SDS schemas + data streaming implemented
+* 🟩 Demo video included
+* 🟩 Clean README explaining integration
+
+---
+
+## 📚 Resources
+
+* Somnia Docs — [https://docs.somnia.network](https://docs.somnia.network)
+* Data Streams Info — [https://datastreams.somnia.network](https://datastreams.somnia.network)
+* Somnia X — [https://x.com/SomniaEco](https://x.com/SomniaEco)
+* Somnia Telegram — [https://t.me/+XHq0F0JXMyhmMzM0](https://t.me/+XHq0F0JXMyhmMzM0)
+
+
